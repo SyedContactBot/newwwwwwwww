@@ -120,7 +120,7 @@ export default function SettingsModal({
             >
               <div
                 className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                  settings.sendWithEnter ? 'translate-x-5.5' : 'translate-x-0.5'
+                  settings.sendWithEnter ? 'translate-x-[22px]' : 'translate-x-[2px]'
                 }`}
               />
             </button>
