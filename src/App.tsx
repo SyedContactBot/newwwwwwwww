@@ -204,6 +204,8 @@ function App() {
     );
     if (controller) {
       abortControllerRef.current = controller;
+    } else {
+      setIsLoading(false);
     }
   };
 
@@ -230,6 +232,8 @@ function App() {
     );
     if (controller) {
       abortControllerRef.current = controller;
+    } else {
+      setIsLoading(false);
     }
   };
 
