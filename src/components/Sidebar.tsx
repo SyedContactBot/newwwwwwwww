@@ -8,8 +8,21 @@ import {
   X,
   ChevronLeft,
   Sparkles,
+  Search,
+  Pin,
+  Download,
+  Settings,
+  Trash,
 } from 'lucide-react';
-import { Conversation, deleteConversation, renameConversation } from '../lib/api';
+import {
+  Conversation,
+  deleteConversation,
+  renameConversation,
+  togglePinConversation,
+  clearAllConversations,
+  exportConversation,
+  searchConversations,
+} from '../lib/api';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -19,6 +32,7 @@ interface SidebarProps {
   onRefresh: () => void;
   isOpen: boolean;
   onClose: () => void;
+  onOpenSettings?: () => void;
 }
 
 export default function Sidebar({
@@ -29,9 +43,12 @@ export default function Sidebar({
   onRefresh,
   isOpen,
   onClose,
+  onOpenSettings,
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   const handleRename = (id: string) => {
     if (editTitle.trim()) {
@@ -46,6 +63,31 @@ export default function Sidebar({
     onRefresh();
   };
 
+  const handlePin = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    togglePinConversation(id);
+    onRefresh();
+  };
+
+  const handleExport = (e: React.MouseEvent, conv: Conversation) => {
+    e.stopPropagation();
+    const md = exportConversation(conv, 'markdown');
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${conv.title.replace(/[^a-z0-9]/gi, '_')}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('Are you sure you want to delete all conversations? This cannot be undone.')) {
+      clearAllConversations();
+      onRefresh();
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -57,6 +99,17 @@ export default function Sidebar({
     if (days < 7) return `${days} days ago`;
     return date.toLocaleDateString();
   };
+
+  const filteredConversations = searchQuery.trim()
+    ? searchConversations(searchQuery)
+    : conversations;
+
+  // Sort: pinned first, then by updated_at
+  const sortedConversations = [...filteredConversations].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+  });
 
   return (
     <>
@@ -81,13 +134,47 @@ export default function Sidebar({
             </div>
             <span className="font-bold text-lg">NexusAI</span>
           </div>
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1 rounded hover:bg-gray-800 transition-colors"
-          >
-            <ChevronLeft size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-1.5 rounded hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
+              title="Search conversations"
+            >
+              <Search size={16} />
+            </button>
+            <button
+              onClick={onClose}
+              className="lg:hidden p-1 rounded hover:bg-gray-800 transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          </div>
         </div>
+
+        {/* Search Bar */}
+        {showSearch && (
+          <div className="px-3 pt-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                className="w-full bg-gray-800 text-white text-sm pl-9 pr-8 py-2 rounded-lg outline-none border border-gray-700 focus:border-gray-600 placeholder-gray-500"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* New Chat Button */}
         <div className="p-3">
@@ -102,13 +189,13 @@ export default function Sidebar({
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto px-3 pb-3">
-          {conversations.length === 0 ? (
+          {sortedConversations.length === 0 ? (
             <div className="text-center text-gray-500 text-sm mt-8 px-4">
-              No conversations yet. Start a new chat!
+              {searchQuery ? 'No matching conversations' : 'No conversations yet. Start a new chat!'}
             </div>
           ) : (
             <div className="space-y-1">
-              {conversations.map((conv) => (
+              {sortedConversations.map((conv) => (
                 <div
                   key={conv.id}
                   className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 ${
@@ -118,7 +205,12 @@ export default function Sidebar({
                   }`}
                   onClick={() => onSelect(conv.id)}
                 >
-                  <MessageSquare size={16} className="flex-shrink-0" />
+                  <div className="flex-shrink-0 relative">
+                    <MessageSquare size={16} />
+                    {conv.pinned && (
+                      <Pin size={8} className="absolute -top-1 -right-1 text-blue-400" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     {editingId === conv.id ? (
                       <div className="flex items-center gap-1">
@@ -163,12 +255,27 @@ export default function Sidebar({
                   {editingId !== conv.id && (
                     <div className="hidden group-hover:flex items-center gap-0.5">
                       <button
+                        onClick={(e) => handlePin(e, conv.id)}
+                        className={`p-1 rounded hover:bg-gray-700 transition-colors ${conv.pinned ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                        title={conv.pinned ? 'Unpin' : 'Pin'}
+                      >
+                        <Pin size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => handleExport(e, conv)}
+                        className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                        title="Export as Markdown"
+                      >
+                        <Download size={14} />
+                      </button>
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingId(conv.id);
                           setEditTitle(conv.title);
                         }}
                         className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                        title="Rename"
                       >
                         <Edit3 size={14} />
                       </button>
@@ -178,6 +285,7 @@ export default function Sidebar({
                           handleDelete(conv.id);
                         }}
                         className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-colors"
+                        title="Delete"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -190,7 +298,24 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-3 border-t border-gray-800 space-y-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenSettings}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            >
+              <Settings size={14} />
+              Settings
+            </button>
+            <button
+              onClick={handleClearAll}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+              title="Clear all conversations"
+            >
+              <Trash size={14} />
+              Clear All
+            </button>
+          </div>
           <div className="text-xs text-gray-500 text-center">
             Free & Unlimited AI Assistant
           </div>
