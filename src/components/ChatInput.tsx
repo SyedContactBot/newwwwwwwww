@@ -158,7 +158,7 @@ export default function ChatInput({
           </div>
         </div>
         <div className="text-center mt-2.5 text-[11px] text-gray-400 dark:text-gray-600">
-          Free & unlimited across 12+ AI models. Enter to send, Shift+Enter for new line.
+          Free & unlimited across 21+ AI models. Enter to send, Shift+Enter for new line.
         </div>
       </div>
     </div>

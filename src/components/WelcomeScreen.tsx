@@ -36,7 +36,7 @@ const suggestions = [
 ];
 
 const capabilities = [
-  { icon: <Zap size={12} />, label: '12+ AI Models' },
+  { icon: <Zap size={12} />, label: '21+ AI Models' },
   { icon: <Code size={12} />, label: 'Coding' },
   { icon: <FileText size={12} />, label: 'Writing' },
   { icon: <Brain size={12} />, label: 'Reasoning' },
@@ -62,7 +62,7 @@ export default function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps)
           Your Free & Unlimited AI Assistant
         </p>
         <p className="text-gray-400 dark:text-gray-500 text-sm mt-1.5 max-w-md mx-auto">
-          Powered by 12+ cutting-edge AI models. No API keys, no limits, no costs.
+          Powered by 21+ cutting-edge AI models. No API keys, no limits, no costs.
         </p>
       </div>
 
