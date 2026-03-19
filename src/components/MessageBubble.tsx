@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { Copy, Check, User, Bot } from 'lucide-react';
+import { Copy, Check, User, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 interface MessageBubbleProps {
@@ -21,24 +21,24 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
   };
 
   return (
-    <div className={`flex gap-4 px-4 py-6 animate-fade-in ${isUser ? '' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
-      <div className="flex-shrink-0">
+    <div className={`flex gap-4 px-4 py-5 animate-fade-in ${isUser ? '' : 'bg-white/40 dark:bg-white/[0.02]'}`}>
+      <div className="flex-shrink-0 pt-0.5">
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+          className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm ${
             isUser
-              ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
-              : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
+              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-blue-500/20'
+              : 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-violet-500/20'
           }`}
         >
-          {isUser ? <User size={16} /> : <Bot size={16} />}
+          {isUser ? <User size={14} /> : <Sparkles size={14} />}
         </div>
       </div>
       <div className="flex-1 min-w-0 max-w-3xl">
-        <div className="text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+        <div className="text-xs font-semibold mb-1.5 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           {isUser ? 'You' : 'NexusAI'}
         </div>
         {isUser ? (
-          <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{content}</div>
+          <div className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{content}</div>
         ) : (
           <div className={`markdown-content text-gray-800 dark:text-gray-200 ${isStreaming ? 'typing-cursor' : ''}`}>
             <ReactMarkdown
@@ -54,20 +54,20 @@ export default function MessageBubble({ role, content, isStreaming }: MessageBub
                       : '';
                   const codeId = `code-${Math.random()}`;
                   return (
-                    <div className="relative group rounded-xl overflow-hidden my-3">
-                      <div className="flex items-center justify-between bg-gray-800 dark:bg-gray-950 px-4 py-2 text-xs text-gray-400">
-                        <span>Code</span>
+                    <div className="relative group rounded-xl overflow-hidden my-3 border border-gray-200/50 dark:border-white/5">
+                      <div className="flex items-center justify-between bg-gray-800 dark:bg-[#0d1117] px-4 py-2 text-xs text-gray-400">
+                        <span className="font-medium">Code</span>
                         <button
                           onClick={() => copyToClipboard(String(codeContent), codeId)}
-                          className="flex items-center gap-1 hover:text-white transition-colors"
+                          className="flex items-center gap-1.5 hover:text-white transition-all duration-200 px-2 py-0.5 rounded-md hover:bg-white/10"
                         >
                           {copied === codeId ? (
                             <>
-                              <Check size={14} /> Copied!
+                              <Check size={13} className="text-emerald-400" /> <span className="text-emerald-400">Copied!</span>
                             </>
                           ) : (
                             <>
-                              <Copy size={14} /> Copy
+                              <Copy size={13} /> Copy
                             </>
                           )}
                         </button>

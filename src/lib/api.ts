@@ -18,17 +18,41 @@ export interface Model {
   id: string;
   name: string;
   provider: string;
+  description: string;
+  category: 'flagship' | 'reasoning' | 'coding' | 'fast' | 'open-source';
 }
 
 export const AVAILABLE_MODELS: Model[] = [
-  { id: 'openai', name: 'GPT (OpenAI)', provider: 'pollinations' },
-  { id: 'openai-large', name: 'GPT Large', provider: 'pollinations' },
-  { id: 'qwen-coder', name: 'Qwen Coder', provider: 'pollinations' },
-  { id: 'llama', name: 'Llama 3.3 70B', provider: 'pollinations' },
-  { id: 'mistral', name: 'Mistral Small', provider: 'pollinations' },
-  { id: 'deepseek', name: 'DeepSeek V3', provider: 'pollinations' },
-  { id: 'deepseek-r1', name: 'DeepSeek R1 (Reasoning)', provider: 'pollinations' },
+  // Flagship Models
+  { id: 'openai', name: 'GPT-4o', provider: 'OpenAI', description: 'Latest GPT model, fast and versatile', category: 'flagship' },
+  { id: 'openai-large', name: 'GPT-4o Large', provider: 'OpenAI', description: 'Higher capacity GPT model for complex tasks', category: 'flagship' },
+  { id: 'claude', name: 'Claude', provider: 'Anthropic', description: 'Intelligent conversations and analysis', category: 'flagship' },
+  { id: 'gemini', name: 'Gemini', provider: 'Google', description: 'Google AI with search and code execution', category: 'flagship' },
+
+  // Reasoning Models
+  { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek', description: 'Advanced chain-of-thought reasoning', category: 'reasoning' },
+  { id: 'qwq', name: 'QwQ 32B', provider: 'Alibaba', description: 'Reasoning-focused model by Qwen team', category: 'reasoning' },
+
+  // Coding Models
+  { id: 'qwen-coder', name: 'Qwen Coder', provider: 'Alibaba', description: 'Specialized for code generation', category: 'coding' },
+
+  // Fast Models
+  { id: 'mistral', name: 'Mistral Small', provider: 'Mistral AI', description: 'Fast and efficient for quick tasks', category: 'fast' },
+  { id: 'llama', name: 'Llama 3.3 70B', provider: 'Meta', description: 'Powerful open-weight model', category: 'fast' },
+
+  // Open Source
+  { id: 'deepseek', name: 'DeepSeek V3', provider: 'DeepSeek', description: 'Strong open-source reasoning model', category: 'open-source' },
+  { id: 'command-r', name: 'Command R', provider: 'Cohere', description: 'Optimized for RAG and tool use', category: 'open-source' },
+  { id: 'phi', name: 'Phi Mini', provider: 'Microsoft', description: 'Compact but capable model', category: 'open-source' },
 ];
+
+export const MODEL_CATEGORIES = [
+  { id: 'flagship', label: 'Flagship', color: 'from-violet-500 to-fuchsia-500' },
+  { id: 'reasoning', label: 'Reasoning', color: 'from-amber-500 to-orange-500' },
+  { id: 'coding', label: 'Coding', color: 'from-cyan-500 to-blue-500' },
+  { id: 'fast', label: 'Fast', color: 'from-emerald-500 to-green-500' },
+  { id: 'open-source', label: 'Open Source', color: 'from-rose-500 to-pink-500' },
+] as const;
 
 const SYSTEM_PROMPT: Message = {
   role: 'system',
