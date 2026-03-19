@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, Sun, Moon, ArrowDown } from 'lucide-react';
+import { Menu, Sun, Moon, ArrowDown, Zap } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import MessageBubble from './components/MessageBubble';
 import ChatInput from './components/ChatInput';
@@ -147,8 +147,13 @@ function App() {
     abortControllerRef.current = controller;
   };
 
+  const currentModelName = models.find((m) => m.id === selectedModel)?.name || 'AI';
+
   return (
-    <div className="h-screen flex overflow-hidden bg-white dark:bg-gray-900">
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-[#0a0a0f] relative">
+      {/* Animated Background */}
+      <div className="mesh-gradient" />
+
       {/* Sidebar */}
       <Sidebar
         conversations={conversations}
@@ -161,29 +166,37 @@ function App() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full min-w-0">
+      <main className="flex-1 flex flex-col h-full min-w-0 relative z-10">
         {/* Top Bar */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <header className="flex items-center justify-between px-5 py-3 border-b border-gray-200/80 dark:border-white/5 glass">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-200"
             >
-              <Menu size={20} />
+              <Menu size={20} className="text-gray-600 dark:text-gray-400" />
             </button>
-            <h2 className="font-semibold text-gray-800 dark:text-gray-200 truncate">
-              {activeConversationId
-                ? conversations.find((c: Conversation) => c.id === activeConversationId)?.title || 'Chat'
-                : 'New Chat'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {activeConversationId
+                  ? conversations.find((c: Conversation) => c.id === activeConversationId)?.title || 'Chat'
+                  : 'New Chat'}
+              </h2>
+              {isStreaming && (
+                <span className="flex items-center gap-1 text-xs text-violet-500 dark:text-violet-400 font-medium">
+                  <Zap size={12} className="animate-pulse" />
+                  {currentModelName}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+              className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
         </header>
@@ -196,7 +209,7 @@ function App() {
           {messages.length === 0 ? (
             <WelcomeScreen onSuggestionClick={handleSend} />
           ) : (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto px-2">
               {messages.map((msg, index) => (
                 <MessageBubble
                   key={index}
@@ -206,7 +219,7 @@ function App() {
                 />
               ))}
               {isLoading && !isStreaming && <TypingIndicator />}
-              <div ref={messagesEndRef} className="h-4" />
+              <div ref={messagesEndRef} className="h-6" />
             </div>
           )}
 
@@ -214,9 +227,9 @@ function App() {
           {showScrollButton && (
             <button
               onClick={scrollToBottom}
-              className="fixed bottom-28 right-8 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 shadow-lg transition-all z-10"
+              className="fixed bottom-28 right-8 p-2.5 rounded-full glass border border-gray-200/50 dark:border-white/10 hover:border-violet-300 dark:hover:border-violet-500/30 shadow-lg hover:shadow-violet-500/10 transition-all duration-300 z-10 group"
             >
-              <ArrowDown size={20} />
+              <ArrowDown size={18} className="text-gray-500 dark:text-gray-400 group-hover:text-violet-500 transition-colors" />
             </button>
           )}
         </div>
