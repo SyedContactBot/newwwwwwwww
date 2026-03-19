@@ -1,8 +1,7 @@
-// Multiple free API endpoints for reliability (no API key needed)
-const API_ENDPOINTS = [
-  'https://gen.pollinations.ai/v1/chat/completions',
-  'https://text.pollinations.ai/openai/chat/completions',
-];
+// Streaming endpoint (free, no API key needed)
+const STREAMING_ENDPOINT = 'https://text.pollinations.ai/openai/chat/completions';
+// Non-streaming endpoint (free for non-streaming, requires auth for streaming)
+const NON_STREAMING_ENDPOINT = 'https://gen.pollinations.ai/v1/chat/completions';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -250,6 +249,67 @@ function attemptStream(
     });
 }
 
+// --- Helper: Non-streaming fallback (simulates streaming with word-by-word delivery) ---
+
+function attemptNonStream(
+  endpoint: string,
+  model: string,
+  apiMessages: { role: string; content: string }[],
+  signal: AbortSignal,
+  callbacks: StreamAttemptCallbacks,
+) {
+  fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: apiMessages,
+      stream: false,
+    }),
+    signal,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        callbacks.onError(`HTTP ${response.status}: ${response.statusText}`);
+        return;
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (!data) return;
+      const choices = data.choices || [];
+      if (choices.length > 0) {
+        const message = choices[0].message || {};
+        const content = message.content || '';
+        if (content) {
+          // Simulate streaming by delivering chunks word-by-word
+          const words = content.split(/( )/);
+          let i = 0;
+          function deliverNext() {
+            if (signal.aborted) return;
+            if (i < words.length) {
+              callbacks.onChunk(words[i]);
+              i++;
+              setTimeout(deliverNext, 15);
+            } else {
+              callbacks.onDone(content);
+            }
+          }
+          deliverNext();
+        } else {
+          callbacks.onDone('');
+        }
+      } else {
+        callbacks.onDone('');
+      }
+    })
+    .catch((err: Error) => {
+      if (err.name !== 'AbortError') {
+        callbacks.onError(err.message);
+      }
+    });
+}
+
 // --- Streaming chat with automatic fallback ---
 
 export function streamChat(
@@ -292,18 +352,20 @@ export function streamChat(
     ...conv.messages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  // Generate all endpoint+model combinations to try
-  const attempts: { endpoint: string; model: string }[] = [];
-  // First try the selected model on all endpoints
-  for (const ep of API_ENDPOINTS) {
-    attempts.push({ endpoint: ep, model });
-  }
-  // Then try fallback models on all endpoints
+  // Generate all attempts to try: streaming first, then non-streaming fallback
+  const attempts: { endpoint: string; model: string; streaming: boolean }[] = [];
+  // First try the selected model via streaming
+  attempts.push({ endpoint: STREAMING_ENDPOINT, model, streaming: true });
+  // Then try fallback models via streaming
   for (const fallbackModel of FALLBACK_MODELS) {
     if (fallbackModel === model) continue;
-    for (const ep of API_ENDPOINTS) {
-      attempts.push({ endpoint: ep, model: fallbackModel });
-    }
+    attempts.push({ endpoint: STREAMING_ENDPOINT, model: fallbackModel, streaming: true });
+  }
+  // Finally try non-streaming on gen.pollinations.ai as last resort
+  attempts.push({ endpoint: NON_STREAMING_ENDPOINT, model, streaming: false });
+  for (const fallbackModel of FALLBACK_MODELS) {
+    if (fallbackModel === model) continue;
+    attempts.push({ endpoint: NON_STREAMING_ENDPOINT, model: fallbackModel, streaming: false });
   }
 
   let attemptIndex = 0;
@@ -319,7 +381,8 @@ export function streamChat(
     const current = attempts[attemptIndex];
     attemptIndex++;
 
-    attemptStream(
+    const attemptFn = current.streaming ? attemptStream : attemptNonStream;
+    attemptFn(
       current.endpoint,
       current.model,
       apiMessages,
