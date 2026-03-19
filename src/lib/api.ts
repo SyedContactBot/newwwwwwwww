@@ -333,8 +333,11 @@ export function streamChat(
             conv.messages.push({ role: 'assistant', content: fullResponse });
             conv.updated_at = new Date().toISOString();
             updateConversation(conv);
+            onDone(conv.id);
+          } else {
+            // Empty response — treat as failure and try next
+            tryNext();
           }
-          onDone(conv.id);
         },
         onError: () => {
           // Try the next model/endpoint combination
